@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { DataRow, DataProfile, MergeStrategy } from "../types";
 
 // @ts-ignore
-const apiKey = process.env.API_KEY;
+const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 export const cleanDataWithGemini = async (
