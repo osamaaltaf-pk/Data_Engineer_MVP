@@ -1,7 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { DataRow, DataProfile, MergeStrategy } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// @ts-ignore
+const apiKey = process.env.API_KEY;
+const ai = new GoogleGenAI({ apiKey });
 
 export const cleanDataWithGemini = async (
   data: DataRow[],
