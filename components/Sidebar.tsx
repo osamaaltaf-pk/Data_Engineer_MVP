@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, LayoutDashboard, FileSpreadsheet, History, Settings, Upload, CheckCircle2, Search, Download, GitMerge } from 'lucide-react';
+import { Database, FileSpreadsheet, Settings, Upload, CheckCircle2, Search, Download, GitMerge } from 'lucide-react';
 import { AppState } from '../types';
 
 interface SidebarProps {

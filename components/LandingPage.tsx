@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, Sparkles, Wand2, BarChart3, ShieldCheck, ArrowRight, Upload, GitMerge, FileJson } from 'lucide-react';
+import { Database, Sparkles, BarChart3, ArrowRight, GitMerge, FileJson, Wand2 } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;

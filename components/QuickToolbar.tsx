@@ -1,5 +1,5 @@
 import React from 'react';
-import { Scissors, CopyMinus, Type, CaseLower } from 'lucide-react';
+import { Scissors, CopyMinus, CaseLower } from 'lucide-react';
 
 interface Props {
   onAction: (actionType: string) => void;

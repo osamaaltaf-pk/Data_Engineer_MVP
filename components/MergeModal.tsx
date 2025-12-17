@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, GitMerge, Upload, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, GitMerge, Upload, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { DataRow, DataSet, MergeStrategy } from '../types';
 import { parseCSV } from '../services/utils';
 import { suggestMergeStrategy } from '../services/geminiService';
@@ -27,6 +27,7 @@ const MergeModal: React.FC<MergeModalProps> = ({ isOpen, onClose, currentData, o
   if (!isOpen) return null;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       try {
@@ -46,6 +47,8 @@ const MergeModal: React.FC<MergeModalProps> = ({ isOpen, onClose, currentData, o
           };
           setSecondaryData(ds);
           analyzeMerge(ds);
+        } else {
+            setError("File appears empty.");
         }
       } catch (err) {
         setError("Failed to parse file.");
@@ -72,20 +75,6 @@ const MergeModal: React.FC<MergeModalProps> = ({ isOpen, onClose, currentData, o
   };
 
   const executeMerge = () => {
-    // We pass the strategy back to parent to execute via utils
-    // Or strictly, we usually just pass the config. 
-    // But for this modal, we'll let parent handle the heavy lifting? 
-    // No, better to import joinDatasets here or in parent. 
-    // Let's pass the config to parent handler to keep logic centralized or do it here.
-    // Parent `onMerge` expects data. Let's do it in App.tsx or use the utils here.
-    // We'll defer execution to App.tsx to keep this component UI focused, 
-    // but we need to pass the secondary data too.
-    // Actually, `onMerge` signature in props: `(mergedData: DataRow[])`. 
-    // So we must compute it.
-    
-    // We need to import joinDatasets dynamically or pass it. 
-    // To avoid circular dependency or huge imports, assuming joinDatasets is in utils.
-    // Ideally we import `joinDatasets` here.
     import('../services/utils').then(({ joinDatasets }) => {
         if (!secondaryData) return;
         const result = joinDatasets(currentData.data, secondaryData.data, strategy);
@@ -125,6 +114,13 @@ const MergeModal: React.FC<MergeModalProps> = ({ isOpen, onClose, currentData, o
                 <span>Select File</span>
                 <input type="file" className="hidden" accept=".csv,.json" onChange={handleFileUpload} />
               </label>
+              
+              {error && (
+                  <div className="mt-6 flex items-center justify-center gap-2 text-red-500 bg-red-50 p-3 rounded-lg mx-auto max-w-xs text-sm">
+                      <AlertCircle size={16} />
+                      {error}
+                  </div>
+              )}
             </div>
           )}
 
@@ -190,6 +186,13 @@ const MergeModal: React.FC<MergeModalProps> = ({ isOpen, onClose, currentData, o
                         ))}
                      </div>
                   </div>
+
+                  {error && (
+                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <AlertCircle size={16} />
+                          {error}
+                      </div>
+                  )}
 
                   <div className="flex justify-end pt-4">
                      <button 
