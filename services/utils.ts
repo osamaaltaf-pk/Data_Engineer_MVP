@@ -46,6 +46,10 @@ export const exportToCSV = (data: DataRow[]): string => {
   return [headerRow, ...rows].join('\n');
 };
 
+export const exportToJSON = (data: DataRow[]): string => {
+  return JSON.stringify(data, null, 2);
+};
+
 export const downloadFile = (content: string, fileName: string, contentType: string) => {
   const a = document.createElement("a");
   const file = new Blob([content], { type: contentType });

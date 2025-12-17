@@ -29,7 +29,10 @@ export interface CleaningHistoryItem {
 }
 
 export enum AppState {
+  LANDING = 'LANDING',
   IDLE = 'IDLE',
   PROCESSING = 'PROCESSING',
   REVIEW = 'REVIEW',
 }
+
+export type ExportFormat = 'csv' | 'json';
