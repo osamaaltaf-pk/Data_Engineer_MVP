@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { DataRow, DataProfile } from "../types";
+import { DataRow, DataProfile, MergeStrategy } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -98,3 +98,59 @@ export const generateProfileSummary = async (profile: DataProfile): Promise<stri
         return "Unable to generate AI summary at this time.";
     }
 }
+
+// --- Feature 11: Merge Strategy Suggester ---
+
+export const suggestMergeStrategy = async (
+  headers1: string[], 
+  sample1: DataRow[], 
+  headers2: string[], 
+  sample2: DataRow[]
+): Promise<MergeStrategy> => {
+  try {
+    const prompt = `
+      I have two datasets I want to merge.
+      
+      Dataset 1 Headers: ${headers1.join(', ')}
+      Dataset 1 Sample: ${JSON.stringify(sample1.slice(0, 3))}
+      
+      Dataset 2 Headers: ${headers2.join(', ')}
+      Dataset 2 Sample: ${JSON.stringify(sample2.slice(0, 3))}
+      
+      Recommend the best merge strategy. 
+      Identify the common column (ID, Email, etc.) to join on.
+      Recommend "inner" if it seems like an intersection is needed, "left" if Dataset 1 is the main table, or "outer" if we want everything.
+      
+      Return JSON ONLY:
+      {
+        "joinType": "inner" | "left" | "outer",
+        "primaryKey": "column_name_from_dataset_1",
+        "secondaryKey": "column_name_from_dataset_2",
+        "confidence": 0.95,
+        "reasoning": "Reasoning string"
+      }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { 
+        responseMimeType: 'application/json'
+      }
+    });
+
+    const text = response.text || "{}";
+    return JSON.parse(text);
+
+  } catch (e) {
+    console.error("Merge suggestion error", e);
+    // Fallback default
+    return {
+      joinType: 'left',
+      primaryKey: headers1[0],
+      secondaryKey: headers2[0],
+      confidence: 0,
+      reasoning: "Automatic detection failed. Please select keys manually."
+    };
+  }
+};

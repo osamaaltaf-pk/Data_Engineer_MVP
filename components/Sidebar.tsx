@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, LayoutDashboard, FileSpreadsheet, History, Settings, Upload, CheckCircle2, Search, Download } from 'lucide-react';
+import { Database, LayoutDashboard, FileSpreadsheet, History, Settings, Upload, CheckCircle2, Search, Download, GitMerge } from 'lucide-react';
 import { AppState } from '../types';
 
 interface SidebarProps {
@@ -8,9 +8,10 @@ interface SidebarProps {
   rowCount?: number;
   onNavigate: (view: string) => void;
   onExportClick: () => void;
+  onMergeClick: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ appState, fileName, rowCount, onNavigate, onExportClick }) => {
+const Sidebar: React.FC<SidebarProps> = ({ appState, fileName, rowCount, onNavigate, onExportClick, onMergeClick }) => {
   const isReview = appState === AppState.REVIEW;
 
   return (
@@ -45,13 +46,15 @@ const Sidebar: React.FC<SidebarProps> = ({ appState, fileName, rowCount, onNavig
           <FileSpreadsheet size={18} />
           Data Editor
         </button>
-
+        
         <button 
            disabled={!isReview}
-           className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-400 cursor-not-allowed"
+           onClick={onMergeClick}
+           className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors
+             ${isReview ? 'text-gray-600 hover:bg-gray-50' : 'text-gray-400 cursor-not-allowed'}`}
         >
-          <History size={18} />
-          History Log
+          <GitMerge size={18} />
+          Merge Data
         </button>
         
         <button 
@@ -90,8 +93,8 @@ const Sidebar: React.FC<SidebarProps> = ({ appState, fileName, rowCount, onNavig
           <li className="flex items-center gap-2 text-xs text-gray-600">
             <Search size={14} className="text-blue-500" /> Bulk Find & Replace
           </li>
-          <li className="flex items-center gap-2 text-xs text-gray-600">
-            <CheckCircle2 size={14} className="text-green-500" /> Export to JSON/CSV
+           <li className="flex items-center gap-2 text-xs text-gray-600">
+            <GitMerge size={14} className="text-purple-500" /> Smart Merge
           </li>
         </ul>
       </div>

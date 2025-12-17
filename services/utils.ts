@@ -1,4 +1,4 @@
-import { DataRow, DataProfile, ColumnProfile } from '../types';
+import { DataRow, DataProfile, ColumnProfile, MergeStrategy } from '../types';
 
 export const parseCSV = (text: string): DataRow[] => {
   const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -46,7 +46,10 @@ export const exportToCSV = (data: DataRow[]): string => {
   return [headerRow, ...rows].join('\n');
 };
 
-export const exportToJSON = (data: DataRow[]): string => {
+export const exportToJSON = (data: DataRow[], metadata?: any): string => {
+  if (metadata) {
+    return JSON.stringify({ metadata, data }, null, 2);
+  }
   return JSON.stringify(data, null, 2);
 };
 
@@ -183,4 +186,65 @@ export const applyFindReplace = (data: DataRow[], column: string, find: string, 
          console.error("Find/Replace error", e);
          return data;
      }
+};
+
+// --- Feature 11: Smart Merge Execution ---
+
+export const joinDatasets = (
+  primary: DataRow[],
+  secondary: DataRow[],
+  strategy: MergeStrategy
+): DataRow[] => {
+  // Create a lookup map for secondary data
+  const secondaryMap = new Map<string, DataRow>();
+  secondary.forEach(row => {
+    const key = String(row[strategy.secondaryKey]);
+    secondaryMap.set(key, row);
+  });
+
+  const merged: DataRow[] = [];
+  const primaryKeysSeen = new Set<string>();
+
+  // Process Primary Rows
+  primary.forEach(pRow => {
+    const pKey = String(pRow[strategy.primaryKey]);
+    primaryKeysSeen.add(pKey);
+    const sRow = secondaryMap.get(pKey);
+
+    if (strategy.joinType === 'inner' && !sRow) return;
+    
+    let finalRow = { ...pRow };
+    
+    if (sRow) {
+      // Merge properties. If collision, Primary wins, Secondary gets suffix if needed?
+      // For MVP, we will just overwrite if collision, OR we can preserve both.
+      // Let's preserve both by checking keys.
+      Object.keys(sRow).forEach(k => {
+        if (Object.prototype.hasOwnProperty.call(finalRow, k) && k !== strategy.primaryKey) {
+           // Collision on non-key field
+           finalRow[`${k}_2`] = sRow[k];
+        } else {
+           finalRow[k] = sRow[k];
+        }
+      });
+    } else if (strategy.joinType === 'left' || strategy.joinType === 'outer') {
+       // Keep primary row as is (sRow properties are effectively null)
+       // To ensure consistent schema, we ideally add nulls for sRow columns, 
+       // but JSON/Dynamic structure handles missing keys fine.
+    }
+    
+    merged.push(finalRow);
+  });
+  
+  // Process Outer Join (Remaining Secondary Rows)
+  if (strategy.joinType === 'outer') {
+      secondary.forEach(sRow => {
+          const sKey = String(sRow[strategy.secondaryKey]);
+          if (!primaryKeysSeen.has(sKey)) {
+              merged.push(sRow);
+          }
+      });
+  }
+
+  return merged;
 };

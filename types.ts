@@ -36,3 +36,11 @@ export enum AppState {
 }
 
 export type ExportFormat = 'csv' | 'json';
+
+export interface MergeStrategy {
+  joinType: 'inner' | 'left' | 'outer';
+  primaryKey: string;
+  secondaryKey: string;
+  confidence: number;
+  reasoning: string;
+}

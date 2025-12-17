@@ -8,6 +8,7 @@ import DataProfileDashboard from './components/DataProfileDashboard';
 import QuickToolbar from './components/QuickToolbar';
 import FindReplaceModal from './components/FindReplaceModal';
 import ExportModal from './components/ExportModal';
+import MergeModal from './components/MergeModal';
 import { DataSet, DataRow, AppState, DataProfile, ExportFormat } from './types';
 import { cleanDataWithGemini, suggestCleaningRules, generateProfileSummary } from './services/geminiService';
 import { exportToCSV, exportToJSON, downloadFile, generateDataProfile, trimWhitespace, removeDuplicates, convertToLowerCase, applyFindReplace } from './services/utils';
@@ -24,6 +25,7 @@ const App: React.FC = () => {
   
   // History State
   const [history, setHistory] = useState<DataSet[]>([]);
+  const [actionLog, setActionLog] = useState<{timestamp: string, action: string}[]>([]);
   
   // UI State
   const [activeTab, setActiveTab] = useState<'profile' | 'data'>('profile');
@@ -35,6 +37,7 @@ const App: React.FC = () => {
   // Modals
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showMerge, setShowMerge] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +62,7 @@ const App: React.FC = () => {
   const handleDataLoaded = async (dataset: DataSet) => {
     setCurrentData(dataset);
     setHistory([dataset]);
+    setActionLog([{ timestamp: new Date().toISOString(), action: `Imported ${dataset.fileName}` }]);
     setAppState(AppState.REVIEW);
     setAiSummary(null);
     try {
@@ -78,6 +82,7 @@ const App: React.FC = () => {
       headers: newHeaders
     };
     setHistory(prev => [...prev, newDataset]);
+    setActionLog(prev => [...prev, { timestamp: new Date().toISOString(), action: description }]);
     setCurrentData(newDataset);
     setActiveTab('data');
     setError(null);
@@ -116,6 +121,12 @@ const App: React.FC = () => {
      applyTransformation(newData, `Find '${find}' & Replace`);
   };
 
+  const handleMerge = (mergedData: DataRow[], log: string) => {
+      applyTransformation(mergedData, log);
+      // Force refresh of suggestions since data structure changed
+      suggestCleaningRules(mergedData).then(setSuggestions).catch(() => {});
+  };
+
   const handleUndo = () => {
     if (history.length <= 1) return;
     const newHistory = [...history];
@@ -123,18 +134,20 @@ const App: React.FC = () => {
     const previousState = newHistory[newHistory.length - 1];
     setHistory(newHistory);
     setCurrentData(previousState);
+    setActionLog(prev => [...prev, { timestamp: new Date().toISOString(), action: "Undo Last Action" }]);
   };
 
   const handleReset = () => {
     setCurrentData(null);
     setDataProfile(null);
     setHistory([]);
+    setActionLog([]);
     setAppState(AppState.IDLE);
     setSuggestions([]);
     setInstruction('');
   };
 
-  const handleExport = (format: ExportFormat, filename: string) => {
+  const handleExport = (format: ExportFormat, filename: string, includeMetadata: boolean) => {
     if (!currentData) return;
     
     // Ensure extension
@@ -146,7 +159,14 @@ const App: React.FC = () => {
       const csvContent = exportToCSV(currentData.data);
       downloadFile(csvContent, filename, 'text/csv');
     } else {
-      const jsonContent = exportToJSON(currentData.data);
+      const metadata = includeMetadata ? {
+          originalFile: history[0]?.fileName,
+          exportedAt: new Date().toISOString(),
+          totalRows: currentData.data.length,
+          cleaningLog: actionLog
+      } : undefined;
+      
+      const jsonContent = exportToJSON(currentData.data, metadata);
       downloadFile(jsonContent, filename, 'application/json');
     }
   };
@@ -187,6 +207,7 @@ const App: React.FC = () => {
         rowCount={currentData?.data.length}
         onNavigate={handleSidebarNavigate}
         onExportClick={() => setShowExport(true)}
+        onMergeClick={() => setShowMerge(true)}
       />
 
       {/* Main Content */}
@@ -352,6 +373,12 @@ const App: React.FC = () => {
             onClose={() => setShowExport(false)}
             onExport={handleExport}
             defaultFilename={currentData.fileName}
+          />
+          <MergeModal
+            isOpen={showMerge}
+            onClose={() => setShowMerge(false)}
+            currentData={currentData}
+            onMerge={handleMerge}
           />
         </>
       )}

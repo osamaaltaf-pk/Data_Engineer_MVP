@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { X, Download, FileJson, FileText, Check } from 'lucide-react';
+import { X, Download, FileJson, FileText, Check, ScrollText } from 'lucide-react';
 import { ExportFormat } from '../types';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (format: ExportFormat, filename: string) => void;
+  onExport: (format: ExportFormat, filename: string, includeMetadata: boolean) => void;
   defaultFilename: string;
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, defaultFilename }) => {
   const [filename, setFilename] = useState(defaultFilename.replace(/\.(csv|json)$/i, ''));
   const [format, setFormat] = useState<ExportFormat>('csv');
+  const [includeMetadata, setIncludeMetadata] = useState(false);
 
   if (!isOpen) return null;
 
@@ -21,7 +22,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, de
         <div className="flex justify-between items-center p-5 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900 flex items-center gap-2">
             <Download size={20} className="text-blue-600" />
-            Export Data
+            Export Data Manager
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={20} />
@@ -64,6 +65,22 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, de
             </div>
           </div>
 
+          {format === 'json' && (
+             <div className="mb-6 bg-gray-50 p-3 rounded-lg border border-gray-200">
+               <label className="flex items-center gap-3 cursor-pointer">
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${includeMetadata ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}`}>
+                      {includeMetadata && <Check size={12} className="text-white" />}
+                  </div>
+                  <input type="checkbox" className="hidden" checked={includeMetadata} onChange={e => setIncludeMetadata(e.target.checked)} />
+                  <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-700 block">Include Transformation History</span>
+                      <span className="text-xs text-gray-500">Append logs and metadata to the JSON export</span>
+                  </div>
+                  <ScrollText size={18} className="text-gray-400" />
+               </label>
+             </div>
+          )}
+
           <div className="flex gap-3 mt-4">
             <button 
               onClick={onClose}
@@ -72,7 +89,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, de
               Cancel
             </button>
             <button 
-              onClick={() => { onExport(format, filename); onClose(); }}
+              onClick={() => { onExport(format, filename, includeMetadata); onClose(); }}
               className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
             >
               Export File
