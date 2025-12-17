@@ -1,0 +1,5 @@
+{
+  "name": "CleanSlate AI",
+  "description": "A GenAI-powered data cleaning and consolidation tool for developers and analysts to rapidly scrub, transform, and standardize datasets using natural language instructions.",
+  "requestFramePermissions": []
+}
